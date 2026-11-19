@@ -25,7 +25,7 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${geistSans.variable} ${geistMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col">
-        <main className="min-h-[60vh]">{children}</main>
+        {children}
 
         <Toaster position="top-right" richColors closeButton />
       </body>

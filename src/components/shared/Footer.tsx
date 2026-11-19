@@ -72,7 +72,7 @@ export default function Footer() {
         {/* Bottom */}
         <div className="mt-16 flex flex-col justify-between gap-6 border-t border-white/10 pt-7 md:flex-row md:items-center">
           <p className="text-xs text-[#8c9b91]">
-            © {new Date().getFullYear()} EQUIPORA. All rights reserved.
+            © 2026 EQUIPORA. All rights reserved.
           </p>
 
           <div className="flex items-center gap-3">
