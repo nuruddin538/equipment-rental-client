@@ -3,160 +3,195 @@
 import Link from "next/link";
 import { useState } from "react";
 import { usePathname, useRouter } from "next/navigation";
-import { Menu, X, LogOut } from "lucide-react";
+import { ArrowUpRight, Menu, X } from "lucide-react";
 import { toast } from "sonner";
-
 import { authClient } from "@/lib/auth-client";
 
-const navLinks = [
-  { name: "Home", href: "/" },
-  { name: "All Equipment", href: "/equipment" },
-  { name: "About Us", href: "/about" },
-  { name: "Contact Us", href: "/contact" },
-  { name: "How It Works", href: "/#how-it-works" },
+const links = [
+  { label: "Home", href: "/" },
+  { label: "Equipment", href: "/equipment" },
+  { label: "About", href: "/about" },
+  { label: "How it works", href: "/#how-it-works" },
+  { label: "Contact", href: "/#contact" },
 ];
 
 export default function Navbar() {
   const pathname = usePathname();
   const router = useRouter();
+
   const [menuOpen, setMenuOpen] = useState(false);
+  const [loggingOut, setLoggingOut] = useState(false);
+
   const { data: session, isPending } = authClient.useSession();
 
   const handleLogout = async () => {
-    const { error } = await authClient.signOut();
+    setLoggingOut(true);
 
-    if (error) {
-      toast.error(error.message || "Logout failed");
-      return;
+    try {
+      const { error } = await authClient.signOut();
+
+      if (error) {
+        toast.error(error.message || "Unable to logout");
+        return;
+      }
+
+      toast.success("You have been logged out.");
+      setMenuOpen(false);
+      router.push("/");
+      router.refresh();
+    } catch {
+      toast.error("Something went wrong during logout.");
+    } finally {
+      setLoggingOut(false);
     }
+  };
 
-    toast.success("Logged out successfully!");
-    router.replace("/");
-    router.refresh();
+  const isActive = (href: string) => {
+    if (href === "/") return pathname === "/";
+    if (href.startsWith("/#")) return false;
+    return pathname === href || pathname.startsWith(`${href}/`);
   };
 
   return (
-    <header className="sticky top-0 z-50 border-b border-[#14211F]/10 bg-[#F4F1E8]/95 backdrop-blur-xl">
-      <nav className="mx-auto flex h-[78px] max-w-[1440px] items-center justify-between px-5 lg:px-10">
-        {/* Logo */}
-        <Link href="/" className="flex items-center gap-3">
-          <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#14211F] text-lg font-black text-[#C9DB83]">
-            E
+    <header className="sticky top-0 z-50 border-b border-[#17231F]/10 bg-[#F5F3ED]/90 backdrop-blur-2xl">
+      <div className="mx-auto flex h-[82px] max-w-[1500px] items-center justify-between px-5 sm:px-8 xl:px-12">
+        {/* Brand */}
+        <Link href="/" className="group flex shrink-0 items-center gap-3">
+          <div className="relative flex h-11 w-11 items-center justify-center overflow-hidden rounded-xl bg-[#17231F] transition duration-300 group-hover:rotate-[-5deg]">
+            <span className="text-2xl font-black tracking-tighter text-[#D3E39A]">
+              E
+            </span>
+            <span className="absolute bottom-0 right-0 h-2.5 w-2.5 bg-[#EF8051]" />
           </div>
 
-          <div>
-            <h1 className="text-xl font-black tracking-tight text-[#14211F]">
-              EQUIPORA
-            </h1>
-            <p className="text-[9px] font-bold tracking-[0.2em] text-[#F07842]">
+          <div className="leading-none">
+            <span className="block text-[21px] font-black tracking-[-1.2px] text-[#17231F]">
+              EQUIPORA<span className="text-[#EF8051]">.</span>
+            </span>
+            <span className="mt-1.5 block text-[8px] font-bold tracking-[2.5px] text-[#758079]">
               RENT SMART. BUILD MORE.
-            </p>
+            </span>
           </div>
         </Link>
 
-        {/* Desktop Navigation */}
-        <div className="hidden items-center gap-7 lg:flex">
-          {navLinks.map((link) => {
-            const active =
-              pathname === link.href ||
-              (link.href !== "/" &&
-                link.href !== "/#how-it-works" &&
-                pathname.startsWith(link.href));
+        {/* Desktop Links */}
+        <nav className="hidden items-center gap-1 xl:flex">
+          {links.map((link) => (
+            <Link
+              key={link.label}
+              href={link.href}
+              className={`relative rounded-full px-4 py-2.5 text-[13px] font-semibold transition duration-200 ${
+                isActive(link.href)
+                  ? "bg-[#17231F] text-white"
+                  : "text-[#68736D] hover:bg-[#17231F]/5 hover:text-[#17231F]"
+              }`}
+            >
+              {link.label}
+            </Link>
+          ))}
+        </nav>
 
-            return (
-              <Link
-                key={link.name}
-                href={link.href}
-                className={`text-sm font-semibold transition ${
-                  active
-                    ? "text-[#F07842]"
-                    : "text-[#52615C] hover:text-[#14211F]"
-                }`}
-              >
-                {link.name}
-              </Link>
-            );
-          })}
-        </div>
-
-        {/* Authentication */}
-        <div className="hidden items-center gap-3 lg:flex">
+        {/* Desktop Actions */}
+        <div className="hidden items-center gap-3 xl:flex">
           {isPending ? (
-            <div className="h-9 w-24 animate-pulse rounded-full bg-gray-200" />
+            <div className="h-10 w-28 animate-pulse rounded-full bg-[#17231F]/10" />
           ) : session ? (
             <>
               <Link
                 href="/dashboard"
-                className="rounded-full bg-[#C9DB83] px-5 py-2.5 text-sm font-bold text-[#14211F] hover:bg-[#B8CD70]"
+                className="group flex items-center gap-2 rounded-full bg-[#D3E39A] px-5 py-3 text-[13px] font-bold text-[#17231F] transition hover:bg-[#C4D786]"
               >
                 Dashboard
+                <ArrowUpRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
               </Link>
 
               <button
+                type="button"
                 onClick={handleLogout}
-                className="flex items-center gap-2 rounded-full border border-[#14211F]/20 px-4 py-2.5 text-sm font-semibold hover:bg-[#14211F] hover:text-white"
+                disabled={loggingOut}
+                className="rounded-full border border-[#17231F]/15 px-4 py-3 text-[13px] font-bold text-[#17231F] transition hover:border-[#EF8051] hover:text-[#EF8051] disabled:opacity-50"
               >
-                <LogOut size={16} />
-                Logout
+                {loggingOut ? "Signing out..." : "Logout"}
               </button>
             </>
           ) : (
             <>
-              <Link href="/login" className="text-sm font-bold text-[#14211F]">
+              <Link
+                href="/login"
+                className="px-4 py-3 text-[13px] font-bold text-[#17231F] transition hover:text-[#EF8051]"
+              >
                 Login
               </Link>
 
               <Link
                 href="/register"
-                className="rounded-full bg-[#14211F] px-6 py-3 text-sm font-bold text-white transition hover:bg-[#F07842]"
+                className="group flex items-center gap-2 rounded-full bg-[#17231F] px-5 py-3 text-[13px] font-bold text-white transition hover:bg-[#EF8051]"
               >
                 Get Started
+                <ArrowUpRight
+                  size={16}
+                  className="transition-transform group-hover:translate-x-0.5 group-hover:-translate-y-0.5"
+                />
               </Link>
             </>
           )}
         </div>
 
-        {/* Mobile Menu Button */}
+        {/* Mobile Menu Toggle */}
         <button
-          onClick={() => setMenuOpen(!menuOpen)}
-          className="rounded-lg border border-[#14211F]/15 p-2 lg:hidden"
-          aria-label="Toggle navigation"
+          type="button"
+          onClick={() => setMenuOpen((value) => !value)}
+          aria-label={menuOpen ? "Close menu" : "Open menu"}
+          aria-expanded={menuOpen}
+          className="flex h-11 w-11 items-center justify-center rounded-full border border-[#17231F]/15 text-[#17231F] xl:hidden"
         >
-          {menuOpen ? <X size={22} /> : <Menu size={22} />}
+          {menuOpen ? <X size={21} /> : <Menu size={21} />}
         </button>
-      </nav>
+      </div>
 
       {/* Mobile Navigation */}
       {menuOpen && (
-        <div className="border-t border-[#14211F]/10 bg-[#F4F1E8] px-5 py-5 lg:hidden">
-          <div className="flex flex-col gap-4">
-            {navLinks.map((link) => (
+        <div className="border-t border-[#17231F]/10 bg-[#F5F3ED] px-5 pb-6 pt-4 xl:hidden">
+          <nav className="flex flex-col gap-1">
+            {links.map((link, index) => (
               <Link
-                key={link.name}
+                key={link.label}
                 href={link.href}
                 onClick={() => setMenuOpen(false)}
-                className="text-sm font-semibold text-[#14211F]"
+                className={`flex items-center justify-between rounded-xl px-4 py-3.5 text-sm font-semibold transition ${
+                  isActive(link.href)
+                    ? "bg-[#17231F] text-white"
+                    : "text-[#53615A] hover:bg-[#17231F]/5"
+                }`}
               >
-                {link.name}
+                {link.label}
+                <span className="text-xs text-current/50">0{index + 1}</span>
               </Link>
             ))}
+          </nav>
 
-            {!isPending &&
-              (session ? (
+          {!isPending && (
+            <div className="mt-5 grid grid-cols-2 gap-3">
+              {session ? (
                 <>
                   <Link
                     href="/dashboard"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-lg bg-[#C9DB83] p-3 text-center font-bold text-[#14211F]"
+                    className="rounded-xl bg-[#D3E39A] px-4 py-3.5 text-center text-sm font-bold text-[#17231F]"
                   >
                     Dashboard
                   </Link>
 
                   <button
+                    type="button"
                     onClick={handleLogout}
-                    className="rounded-lg bg-[#14211F] p-3 text-white"
+                    disabled={loggingOut}
+                    className="rounded-xl bg-[#17231F] px-4 py-3.5 text-sm font-bold text-white disabled:opacity-50"
                   >
-                    Logout
+                    {loggingOut ? "Signing out..." : "Logout"}
                   </button>
                 </>
               ) : (
@@ -164,7 +199,7 @@ export default function Navbar() {
                   <Link
                     href="/login"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-lg border border-[#14211F]/20 p-3 text-center font-bold"
+                    className="rounded-xl border border-[#17231F]/20 px-4 py-3.5 text-center text-sm font-bold text-[#17231F]"
                   >
                     Login
                   </Link>
@@ -172,13 +207,14 @@ export default function Navbar() {
                   <Link
                     href="/register"
                     onClick={() => setMenuOpen(false)}
-                    className="rounded-lg bg-[#14211F] p-3 text-center font-bold text-white"
+                    className="rounded-xl bg-[#17231F] px-4 py-3.5 text-center text-sm font-bold text-white"
                   >
                     Register
                   </Link>
                 </>
-              ))}
-          </div>
+              )}
+            </div>
+          )}
         </div>
       )}
     </header>
