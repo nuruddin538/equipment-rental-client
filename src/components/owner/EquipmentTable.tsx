@@ -68,8 +68,15 @@ export default function EquipmentTable() {
       setLoading(false);
     }
   };
+  //   useEffect(() => {
+  //     void fetchEquipment();
+  //   }, []);
   useEffect(() => {
-    void fetchEquipment();
+    const loadEquipment = async () => {
+      await fetchEquipment();
+    };
+
+    void loadEquipment();
   }, []);
 
   const handleDelete = async (item: Equipment) => {
