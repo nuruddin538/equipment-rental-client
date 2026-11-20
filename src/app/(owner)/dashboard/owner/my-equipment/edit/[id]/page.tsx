@@ -30,7 +30,6 @@ export default function EditEquipmentPage() {
     };
     void loadEquipment();
   }, [params.id]);
-
   if (loading) {
     return (
       <div className="flex min-h-80 items-center justify-center">
