@@ -7,7 +7,7 @@ import WhyChooseUs from "@/components/home/WhyChooseUs";
 import HowItWorks from "@/components/home/HowItWorks";
 import Testimonials from "@/components/home/Testimonials";
 import PopularEquipment from "@/components/home/PopularEquipment";
-import CTASection from "@/components/home/CTASection";
+import CTASection from "@/components/home/TrustedOwners";
 
 export default function HomePage() {
   return (
