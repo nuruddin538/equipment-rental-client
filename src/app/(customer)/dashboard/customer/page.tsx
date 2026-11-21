@@ -46,7 +46,11 @@ export default function CustomerOverviewPage() {
   };
 
   useEffect(() => {
-    void loadDashboard();
+    const loadingDashboard = async () => {
+      void loadDashboard();
+    };
+
+    void loadingDashboard();
   }, []);
 
   const cards = [
