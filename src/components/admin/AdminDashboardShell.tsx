@@ -13,13 +13,17 @@ export default function AdminDashboardShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-
   const { data: session, isPending } = authClient.useSession();
-
   const [mobileOpen, setMobileOpen] = useState(false);
 
+  //   const user = session?.user as
+  //     | (typeof session.user & { role?: string })
+  //     | undefined;
+
   const user = session?.user as
-    | (typeof session.user & { role?: string })
+    | (NonNullable<typeof session>["user"] & {
+        role?: string;
+      })
     | undefined;
 
   useEffect(() => {
