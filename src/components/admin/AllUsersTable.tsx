@@ -34,11 +34,11 @@ export default function AllUsersTable() {
   }, []);
 
   useEffect(() => {
-    const loadEquipment = async () => {
+    const loadingUsers = async () => {
       void loadUsers();
     };
 
-    void loadEquipment();
+    void loadingUsers();
   }, [loadUsers]);
 
   const filteredUsers = useMemo(() => {

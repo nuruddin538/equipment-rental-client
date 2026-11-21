@@ -54,11 +54,11 @@ export default function AdminOverviewPage() {
   //     void loadStats();
   //   }, []);
   useEffect(() => {
-    const loadStats = async () => {
+    const loadingStats = async () => {
       void loadStats();
     };
 
-    void loadStats();
+    void loadingStats();
   }, []);
 
   const cards = [

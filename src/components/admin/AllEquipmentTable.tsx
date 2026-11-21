@@ -1,6 +1,7 @@
 "use client";
 
 import { useCallback, useEffect, useMemo, useState } from "react";
+import type { FormEvent } from "react";
 import {
   Check,
   Search,
@@ -12,7 +13,17 @@ import {
 } from "lucide-react";
 import { toast } from "sonner";
 
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogFooter,
+  DialogHeader,
+  DialogTitle,
+} from "@/components/ui/dialog";
+
 import AdminTableSkeleton from "./AdminTableSkeleton";
+
 import {
   deleteAdminEquipment,
   getAllEquipment,
@@ -35,13 +46,28 @@ export default function AllEquipmentTable() {
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState("all");
   const [busyId, setBusyId] = useState("");
+
   const [editing, setEditing] = useState<AdminEquipment | null>(null);
 
+  // Status confirmation dialog state
+  const [confirmDialog, setConfirmDialog] = useState<{
+    open: boolean;
+    status: EquipmentStatus | null;
+    item: AdminEquipment | null;
+  }>({
+    open: false,
+    status: null,
+    item: null,
+  });
+
+  // Load equipment
   const loadEquipment = useCallback(async () => {
     try {
       setLoading(true);
       setError("");
+
       const result = await getAllEquipment();
+
       setItems(result.equipment || []);
     } catch (err) {
       setError(err instanceof Error ? err.message : "Unable to load equipment");
@@ -50,14 +76,19 @@ export default function AllEquipmentTable() {
     }
   }, []);
 
+  //   useEffect(() => {
+  //     void loadEquipment();
+  //   }, [loadEquipment]);
+
   useEffect(() => {
-    const loadEquipment = async () => {
+    const loadingEquipment = async () => {
       void loadEquipment();
     };
 
-    void loadEquipment();
+    void loadingEquipment();
   }, []);
 
+  // Search and filter
   const filteredItems = useMemo(
     () =>
       items.filter((item) => {
@@ -71,16 +102,35 @@ export default function AllEquipmentTable() {
     [items, search, filter]
   );
 
-  const changeStatus = async (
-    item: AdminEquipment,
-    status: EquipmentStatus
-  ) => {
-    if (!window.confirm(`Are you sure you want to ${status} "${item.name}"?`)) {
-      return;
-    }
+  // Open status confirmation dialog
+  const changeStatus = (item: AdminEquipment, status: EquipmentStatus) => {
+    setConfirmDialog({
+      open: true,
+      status,
+      item,
+    });
+  };
+
+  // Close status confirmation dialog
+  const closeConfirmDialog = () => {
+    if (busyId) return;
+
+    setConfirmDialog({
+      open: false,
+      status: null,
+      item: null,
+    });
+  };
+
+  // Confirm status update
+  const confirmStatusChange = async () => {
+    const { item, status } = confirmDialog;
+
+    if (!item || !status || busyId) return;
 
     try {
       setBusyId(item._id);
+
       await updateEquipmentStatus(item._id, status);
 
       setItems((current) =>
@@ -89,7 +139,13 @@ export default function AllEquipmentTable() {
         )
       );
 
-      toast.success(`Equipment ${status}`);
+      toast.success(`Equipment ${status} successfully`);
+
+      setConfirmDialog({
+        open: false,
+        status: null,
+        item: null,
+      });
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Status update failed");
     } finally {
@@ -97,18 +153,18 @@ export default function AllEquipmentTable() {
     }
   };
 
+  // Delete equipment
   const handleDelete = async (item: AdminEquipment) => {
-    if (!window.confirm(`Delete "${item.name}" permanently?`)) return;
-
     try {
       setBusyId(item._id);
+
       await deleteAdminEquipment(item._id);
 
       setItems((current) =>
         current.filter((equipment) => equipment._id !== item._id)
       );
 
-      toast.success("Equipment deleted");
+      toast.success("Equipment deleted successfully");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Delete failed");
     } finally {
@@ -116,8 +172,10 @@ export default function AllEquipmentTable() {
     }
   };
 
-  const saveEdit = async (event: React.FormEvent<HTMLFormElement>) => {
+  // Update equipment
+  const saveEdit = async (event: FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     if (!editing) return;
 
     const form = new FormData(event.currentTarget);
@@ -143,6 +201,7 @@ export default function AllEquipmentTable() {
 
     try {
       setBusyId(editing._id);
+
       await updateAdminEquipment(editing._id, data);
 
       setItems((current) =>
@@ -159,7 +218,8 @@ export default function AllEquipmentTable() {
       );
 
       setEditing(null);
-      toast.success("Equipment updated");
+
+      toast.success("Equipment updated successfully");
     } catch (err) {
       toast.error(err instanceof Error ? err.message : "Update failed");
     } finally {
@@ -167,12 +227,15 @@ export default function AllEquipmentTable() {
     }
   };
 
-  if (loading) return <AdminTableSkeleton rows={7} columns={6} />;
+  if (loading) {
+    return <AdminTableSkeleton rows={7} columns={6} />;
+  }
 
   if (error) {
     return (
       <div className="rounded-2xl bg-white p-8 text-center">
         <p className="font-semibold text-red-600">{error}</p>
+
         <button
           onClick={() => void loadEquipment()}
           className="mt-4 rounded-xl bg-[#14211F] px-5 py-2.5 text-sm text-white"
@@ -186,9 +249,11 @@ export default function AllEquipmentTable() {
   return (
     <>
       <section className="overflow-hidden rounded-2xl border border-[#14211F]/10 bg-white">
+        {/* Header and filters */}
         <div className="flex flex-col gap-4 border-b border-[#14211F]/10 p-5 sm:flex-row sm:items-center sm:justify-between">
           <div>
             <p className="font-bold">Equipment inventory</p>
+
             <p className="mt-1 text-xs text-[#14211F]/45">
               {filteredItems.length} equipment items
             </p>
@@ -200,6 +265,7 @@ export default function AllEquipmentTable() {
                 size={16}
                 className="absolute left-3 top-1/2 -translate-y-1/2 text-[#14211F]/40"
               />
+
               <input
                 value={search}
                 onChange={(event) => setSearch(event.target.value)}
@@ -229,6 +295,7 @@ export default function AllEquipmentTable() {
           </div>
         </div>
 
+        {/* Equipment list */}
         {filteredItems.length === 0 ? (
           <div className="py-16 text-center">
             <Package className="mx-auto text-[#14211F]/25" size={34} />
@@ -236,6 +303,7 @@ export default function AllEquipmentTable() {
           </div>
         ) : (
           <>
+            {/* Desktop table */}
             <div className="hidden overflow-x-auto lg:block">
               <table className="w-full min-w-[1000px] text-left text-sm">
                 <thead className="bg-[#F4F1E8]/70 text-[10px] uppercase tracking-wider text-[#14211F]/50">
@@ -263,8 +331,10 @@ export default function AllEquipmentTable() {
                           ) : (
                             <div className="h-12 w-14 rounded-lg bg-[#F4F1E8]" />
                           )}
+
                           <div>
                             <p className="font-semibold">{item.name}</p>
+
                             <p className="mt-1 text-xs text-[#14211F]/45">
                               {item.location}
                             </p>
@@ -302,11 +372,9 @@ export default function AllEquipmentTable() {
                           {item.status !== "approved" && (
                             <button
                               disabled={busyId === item._id}
-                              onClick={() =>
-                                void changeStatus(item, "approved")
-                              }
+                              onClick={() => changeStatus(item, "approved")}
                               title="Approve"
-                              className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50"
+                              className="rounded-lg p-2 text-emerald-600 hover:bg-emerald-50 disabled:opacity-50"
                             >
                               <Check size={16} />
                             </button>
@@ -315,11 +383,9 @@ export default function AllEquipmentTable() {
                           {item.status !== "rejected" && (
                             <button
                               disabled={busyId === item._id}
-                              onClick={() =>
-                                void changeStatus(item, "rejected")
-                              }
+                              onClick={() => changeStatus(item, "rejected")}
                               title="Reject"
-                              className="rounded-lg p-2 text-amber-600 hover:bg-amber-50"
+                              className="rounded-lg p-2 text-amber-600 hover:bg-amber-50 disabled:opacity-50"
                             >
                               <X size={16} />
                             </button>
@@ -337,7 +403,7 @@ export default function AllEquipmentTable() {
                             disabled={busyId === item._id}
                             onClick={() => void handleDelete(item)}
                             title="Delete"
-                            className="rounded-lg p-2 text-red-500 hover:bg-red-50"
+                            className="rounded-lg p-2 text-red-500 hover:bg-red-50 disabled:opacity-50"
                           >
                             <Trash2 size={16} />
                           </button>
@@ -349,6 +415,7 @@ export default function AllEquipmentTable() {
               </table>
             </div>
 
+            {/* Mobile cards */}
             <div className="divide-y divide-[#14211F]/10 lg:hidden">
               {filteredItems.map((item) => (
                 <div key={item._id} className="space-y-3 p-5">
@@ -360,11 +427,14 @@ export default function AllEquipmentTable() {
                         className="h-16 w-20 rounded-lg object-cover"
                       />
                     )}
+
                     <div className="min-w-0">
                       <p className="font-bold">{item.name}</p>
+
                       <p className="mt-1 text-xs text-[#14211F]/50">
                         {item.category} · {item.location}
                       </p>
+
                       <p className="mt-1 text-sm font-semibold">
                         ৳{item.price} / {item.rentalType}
                       </p>
@@ -379,25 +449,30 @@ export default function AllEquipmentTable() {
                     >
                       {item.status}
                     </span>
+
                     <div className="flex gap-1">
                       {item.status !== "approved" && (
                         <button
-                          onClick={() => void changeStatus(item, "approved")}
-                          className="rounded-lg bg-emerald-50 p-2 text-emerald-700"
+                          disabled={busyId === item._id}
+                          onClick={() => changeStatus(item, "approved")}
+                          className="rounded-lg bg-emerald-50 p-2 text-emerald-700 disabled:opacity-50"
                           aria-label="Approve"
                         >
                           <Check size={16} />
                         </button>
                       )}
+
                       {item.status !== "rejected" && (
                         <button
-                          onClick={() => void changeStatus(item, "rejected")}
-                          className="rounded-lg bg-amber-50 p-2 text-amber-700"
+                          disabled={busyId === item._id}
+                          onClick={() => changeStatus(item, "rejected")}
+                          className="rounded-lg bg-amber-50 p-2 text-amber-700 disabled:opacity-50"
                           aria-label="Reject"
                         >
                           <X size={16} />
                         </button>
                       )}
+
                       <button
                         onClick={() => setEditing(item)}
                         className="rounded-lg bg-blue-50 p-2 text-blue-700"
@@ -405,9 +480,11 @@ export default function AllEquipmentTable() {
                       >
                         <Pencil size={16} />
                       </button>
+
                       <button
+                        disabled={busyId === item._id}
                         onClick={() => void handleDelete(item)}
-                        className="rounded-lg bg-red-50 p-2 text-red-600"
+                        className="rounded-lg bg-red-50 p-2 text-red-600 disabled:opacity-50"
                         aria-label="Delete"
                       >
                         <Trash2 size={16} />
@@ -421,6 +498,71 @@ export default function AllEquipmentTable() {
         )}
       </section>
 
+      {/* Status confirmation dialog */}
+      <Dialog
+        open={confirmDialog.open}
+        onOpenChange={(open) => {
+          if (!open) closeConfirmDialog();
+        }}
+      >
+        <DialogContent className="sm:max-w-[425px]">
+          <DialogHeader>
+            <DialogTitle className="text-lg font-bold text-[#14211F]">
+              Confirm Equipment Status
+            </DialogTitle>
+
+            <DialogDescription className="pt-2 text-sm leading-6">
+              Are you sure you want to{" "}
+              <span
+                className={`font-bold capitalize ${
+                  confirmDialog.status === "approved"
+                    ? "text-emerald-600"
+                    : "text-red-600"
+                }`}
+              >
+                {confirmDialog.status}
+              </span>{" "}
+              the equipment{" "}
+              <span className="font-semibold text-[#14211F]">
+                &quot;{confirmDialog.item?.name}&quot;
+              </span>
+              ?
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="mt-4 gap-2 sm:gap-2">
+            <button
+              type="button"
+              disabled={!!busyId}
+              onClick={closeConfirmDialog}
+              className="rounded-xl border border-[#14211F]/15 px-5 py-2.5 text-sm font-semibold text-[#14211F] transition hover:bg-[#F4F1E8] disabled:opacity-50"
+            >
+              Cancel
+            </button>
+
+            <button
+              type="button"
+              disabled={!!busyId}
+              onClick={() => void confirmStatusChange()}
+              className={`rounded-xl px-5 py-2.5 text-sm font-bold text-white transition disabled:cursor-not-allowed disabled:opacity-50 ${
+                confirmDialog.status === "approved"
+                  ? "bg-emerald-600 hover:bg-emerald-700"
+                  : "bg-red-600 hover:bg-red-700"
+              }`}
+            >
+              {busyId
+                ? "Processing..."
+                : `Confirm ${
+                    confirmDialog.status === "approved"
+                      ? "Approval"
+                      : "Rejection"
+                  }`}
+            </button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit equipment dialog */}
       {editing && (
         <div className="fixed inset-0 z-[70] flex items-center justify-center overflow-y-auto bg-[#101B18]/60 p-4 backdrop-blur-sm">
           <form
@@ -432,8 +574,10 @@ export default function AllEquipmentTable() {
                 <p className="text-[10px] font-bold uppercase tracking-widest text-[#F07842]">
                   Inventory management
                 </p>
+
                 <h2 className="mt-1 text-xl font-black">Update equipment</h2>
               </div>
+
               <button
                 type="button"
                 onClick={() => setEditing(null)}
@@ -487,6 +631,7 @@ export default function AllEquipmentTable() {
               >
                 Cancel
               </button>
+
               <button
                 type="submit"
                 disabled={busyId === editing._id}

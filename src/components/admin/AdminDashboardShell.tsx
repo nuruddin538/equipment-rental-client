@@ -13,18 +13,18 @@ export default function AdminDashboardShell({
 }) {
   const router = useRouter();
   const pathname = usePathname();
-  const { data: session, isPending } = authClient.useSession();
-  const [mobileOpen, setMobileOpen] = useState(false);
 
-  //   const user = session?.user as
-  //     | (typeof session.user & { role?: string })
-  //     | undefined;
+  const { data: session, isPending } = authClient.useSession();
+
+  const [mobileOpen, setMobileOpen] = useState(false);
 
   const user = session?.user as
     | (NonNullable<typeof session>["user"] & {
         role?: string;
       })
     | undefined;
+
+  const isAdmin = user?.role === "admin";
 
   useEffect(() => {
     if (isPending) return;
@@ -34,18 +34,19 @@ export default function AdminDashboardShell({
       return;
     }
 
-    if (user?.role !== "admin") {
+    if (!isAdmin) {
       router.replace("/unauthorized");
     }
-  }, [isPending, session, user?.role, router, pathname]);
+  }, [isPending, session, isAdmin, router, pathname]);
 
-  if (isPending || !session || user?.role !== "admin") {
+  if (isPending || !session || !isAdmin) {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F4F1E8]">
         <div className="text-center">
           <div className="mx-auto flex h-14 w-14 animate-pulse items-center justify-center rounded-2xl bg-[#14211F] text-[#C9DB83]">
             <ShieldCheck size={26} />
           </div>
+
           <p className="mt-4 text-sm font-semibold text-[#14211F]">
             Verifying administrator access...
           </p>

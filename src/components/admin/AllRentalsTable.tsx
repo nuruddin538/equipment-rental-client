@@ -74,11 +74,11 @@ export default function AllRentalsTable() {
   //   }, [loadRentals]);
 
   useEffect(() => {
-    const loadRentals = async () => {
+    const loadingRentals = async () => {
       void loadRentals();
     };
 
-    void loadRentals();
+    void loadingRentals();
   }, []);
 
   // Filter rentals

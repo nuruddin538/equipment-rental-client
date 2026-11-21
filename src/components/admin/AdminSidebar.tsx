@@ -56,9 +56,13 @@ export default function AdminSidebar({
   const router = useRouter();
 
   const handleLogout = async () => {
-    await authClient.signOut();
-    router.replace("/signin");
-    router.refresh();
+    try {
+      await authClient.signOut();
+      router.replace("/signin");
+      router.refresh();
+    } catch (error) {
+      console.error("Logout failed:", error);
+    }
   };
 
   return (
@@ -77,12 +81,9 @@ export default function AdminSidebar({
           mobileOpen ? "translate-x-0" : "-translate-x-full"
         )}
       >
+        {/* Logo */}
         <div className="flex h-[82px] items-center justify-between border-b border-white/10 px-7">
-          <Link
-            href="/dashboard/admin"
-            className="flex items-center gap-3"
-            onClick={onClose}
-          >
+          <Link href="/" className="flex items-center gap-3" onClick={onClose}>
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F07842] text-white">
               <ShieldCheck size={21} />
             </div>
@@ -104,12 +105,14 @@ export default function AdminSidebar({
           </button>
         </div>
 
+        {/* Workspace */}
         <div className="px-6 pb-3 pt-8">
           <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-white/35">
             Workspace
           </p>
         </div>
 
+        {/* Navigation */}
         <nav className="flex-1 space-y-1 px-4">
           {navigation.map((item) => {
             const Icon = item.icon;
@@ -142,6 +145,7 @@ export default function AdminSidebar({
           })}
         </nav>
 
+        {/* Footer */}
         <div className="border-t border-white/10 p-4">
           <div className="mb-4 rounded-xl bg-white/5 p-4">
             <p className="text-xs font-semibold">Administrator access</p>

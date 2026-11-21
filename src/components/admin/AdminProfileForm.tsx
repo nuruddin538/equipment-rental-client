@@ -33,11 +33,11 @@ export default function AdminProfileForm() {
   //   }, [loadProfile]);
 
   useEffect(() => {
-    const loadProfile = async () => {
+    const loadingProfile = async () => {
       void loadProfile();
     };
 
-    void loadProfile();
+    void loadingProfile();
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
