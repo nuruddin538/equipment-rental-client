@@ -3,7 +3,6 @@
 import { useEffect } from "react";
 import { useRouter } from "next/navigation";
 import { authClient } from "@/lib/auth-client";
-
 import { LoaderCircle } from "lucide-react";
 import OwnerSidebar from "./OwnerSidebar";
 
@@ -13,24 +12,27 @@ export default function OwnerDashboardShell({
   children: React.ReactNode;
 }) {
   const router = useRouter();
+
   const { data: session, isPending } = authClient.useSession();
 
-  const user = session?.user as
-    | { role?: string; name?: string; email?: string }
-    | undefined;
+  const user = session?.user as { role?: string } | undefined;
+
+  const role = user?.role;
 
   useEffect(() => {
     if (isPending) return;
+
     if (!session) {
       router.replace("/signin?callbackUrl=/dashboard/owner");
       return;
     }
-    if (user?.role !== "owner") {
+
+    if (role !== "owner") {
       router.replace("/");
     }
-  }, [session, isPending, user?.role, router]);
+  }, [session, isPending, role, router]);
 
-  if (isPending || !session || user?.role !== "owner") {
+  if (isPending || !session || role !== "owner") {
     return (
       <div className="flex min-h-screen items-center justify-center bg-[#F4F1E8]">
         <div className="flex flex-col items-center gap-4">
@@ -42,6 +44,7 @@ export default function OwnerDashboardShell({
       </div>
     );
   }
+
   return (
     <div className="min-h-screen bg-[#F4F1E8] lg:flex">
       <OwnerSidebar />

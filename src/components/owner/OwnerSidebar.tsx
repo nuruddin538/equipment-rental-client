@@ -56,7 +56,6 @@ export default function OwnerSidebar() {
       setLoggingOut(true);
       await authClient.signOut();
       router.replace("/signin");
-      router.refresh();
     } catch {
       setLoggingOut(false);
     }
@@ -66,7 +65,9 @@ export default function OwnerSidebar() {
     <>
       <div className="flex items-center gap-3 px-6 py-7">
         <div className="flex h-11 w-11 items-center justify-center rounded-xl bg-[#F07842] text-[#14211F]">
-          <Boxes size={24} strokeWidth={2.5} />
+          <Link href="/">
+            <Boxes size={24} strokeWidth={2.5} />
+          </Link>
         </div>
 
         <div>

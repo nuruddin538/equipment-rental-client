@@ -25,24 +25,36 @@ export default function OwnerProfileForm() {
   const [saving, setSaving] = useState(false);
 
   useEffect(() => {
+    let cancelled = false;
+
     const loadProfile = async () => {
       try {
         const result = await getOwnerProfile();
+
+        if (cancelled) return;
 
         setProfile(result.profile);
         setName(result.profile.name);
         setPhone(result.profile.phone || "");
         setImage(result.profile.image || "");
       } catch (error) {
-        toast.error(
-          error instanceof Error ? error.message : "Failed to load profile."
-        );
+        if (!cancelled) {
+          toast.error(
+            error instanceof Error ? error.message : "Failed to load profile."
+          );
+        }
       } finally {
-        setLoading(false);
+        if (!cancelled) {
+          setLoading(false);
+        }
       }
     };
 
     void loadProfile();
+
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {

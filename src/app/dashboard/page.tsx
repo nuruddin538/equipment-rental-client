@@ -11,13 +11,13 @@ export default async function DashboardRedirect() {
   }
   switch (session.user.role) {
     case "admin":
-      redirect("/dashboard/admin/overview");
+      redirect("/dashboard/admin");
 
     case "owner":
-      redirect("/dashboard/owner/overview");
+      redirect("/dashboard/owner");
 
     case "customer":
-      redirect("/dashboard/customer/overview");
+      redirect("/dashboard/customer");
 
     default:
       redirect("/");

@@ -79,10 +79,26 @@ export default function EquipmentTable() {
     void loadEquipment();
   }, []);
 
+  const confirmDelete = (itemName: string): Promise<boolean> => {
+    return new Promise((resolve) => {
+      toast(`Delete "${itemName}"?`, {
+        description: "This action cannot be undone.",
+        duration: Infinity,
+        action: {
+          label: "Delete",
+          onClick: () => resolve(true),
+        },
+        cancel: {
+          label: "Cancel",
+          onClick: () => resolve(false),
+        },
+        onDismiss: () => resolve(false),
+      });
+    });
+  };
+
   const handleDelete = async (item: Equipment) => {
-    const confirmed = window.confirm(
-      `Are you sure you want to delete "${item.name}"? This action cannot be undone.`
-    );
+    const confirmed = await confirmDelete(item.name);
     if (!confirmed) return;
 
     try {
