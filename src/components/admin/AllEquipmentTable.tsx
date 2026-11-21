@@ -50,10 +50,6 @@ export default function AllEquipmentTable() {
     }
   }, []);
 
-  //   useEffect(() => {
-  //     void loadEquipment();
-  //   }, [loadEquipment]);
-
   useEffect(() => {
     const loadEquipment = async () => {
       void loadEquipment();
