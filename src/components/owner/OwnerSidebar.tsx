@@ -55,7 +55,7 @@ export default function OwnerSidebar() {
     try {
       setLoggingOut(true);
       await authClient.signOut();
-      router.replace("/signin");
+      router.replace("/login");
     } catch {
       setLoggingOut(false);
     }
