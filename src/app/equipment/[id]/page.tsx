@@ -18,8 +18,18 @@ export default async function EquipmentDetailsPage({
 }: EquipmentDetailsPageProps) {
   const { id } = await params;
 
-  // Get request headers (including authentication cookies)
+  // Get request headers, including Better Auth cookies
   const requestHeaders = await headers();
+
+  // Verify the current user's session
+  const session = await auth.api.getSession({
+    headers: requestHeaders,
+  });
+
+  // Redirect unauthenticated users to the Sign In page
+  if (!session?.user) {
+    redirect("/login");
+  }
 
   // Get JWT token from Better Auth
   const tokenResult = await auth.api.getToken({
@@ -28,15 +38,15 @@ export default async function EquipmentDetailsPage({
 
   const token = tokenResult?.token;
 
-  // Check authentication
+  // Redirect if the authentication token is unavailable
   if (!token) {
-    redirect("/signin");
+    redirect("/login");
   }
 
-  // Fetch equipment using JWT
+  // Fetch equipment details using the authenticated JWT
   const equipment = await getEquipmentById(id, token);
 
-  // Check equipment availability
+  // Show 404 if equipment does not exist
   if (!equipment) {
     notFound();
   }
