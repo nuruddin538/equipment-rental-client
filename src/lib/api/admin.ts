@@ -1,4 +1,3 @@
-import { updateEquipment } from "@/lib/api/owner";
 import { authClient } from "@/lib/auth-client";
 
 import type {

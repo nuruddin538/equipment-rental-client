@@ -1,6 +1,6 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useCallback, useEffect, useState } from "react";
 import Link from "next/link";
 import {
   Users,
@@ -13,53 +13,138 @@ import {
 import AdminPageHeader from "@/components/admin/AdminPageHeader";
 import AdminTableSkeleton from "@/components/admin/AdminTableSkeleton";
 import { getAllUsers, getAllEquipment, getAllRentals } from "@/lib/api/admin";
+import AdminAnalytics from "@/components/admin/AdminAnalytics";
+
+interface DashboardStats {
+  users: number;
+  equipment: number;
+  pending: number;
+  rentals: number;
+}
+
+interface EquipmentItem {
+  status?: string;
+}
+
+interface UsersResponse {
+  count?: unknown;
+  users?: unknown;
+}
+
+interface EquipmentResponse {
+  count?: unknown;
+  equipment?: unknown;
+  equipments?: unknown;
+}
+
+interface RentalsResponse {
+  count?: unknown;
+  rentals?: unknown;
+}
+
+const INITIAL_STATS: DashboardStats = {
+  users: 0,
+  equipment: 0,
+  pending: 0,
+  rentals: 0,
+};
+
+function getSafeCount(count: unknown, items: unknown): number {
+  if (count !== undefined && count !== null) {
+    const parsedCount = Number(count);
+
+    if (Number.isFinite(parsedCount)) {
+      return Math.max(0, parsedCount);
+    }
+  }
+
+  return Array.isArray(items) ? items.length : 0;
+}
+
+function getEquipmentList(data: EquipmentResponse): EquipmentItem[] {
+  if (Array.isArray(data.equipment)) {
+    return data.equipment as EquipmentItem[];
+  }
+
+  if (Array.isArray(data.equipments)) {
+    return data.equipments as EquipmentItem[];
+  }
+
+  return [];
+}
 
 export default function AdminOverviewPage() {
-  const [stats, setStats] = useState({
-    users: 0,
-    equipment: 0,
-    pending: 0,
-    rentals: 0,
-  });
-
+  const [stats, setStats] = useState<DashboardStats>(INITIAL_STATS);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
+  const [retryCount, setRetryCount] = useState(0);
 
-  const loadStats = async () => {
-    try {
-      setLoading(true);
-      setError("");
+  const loadStats = useCallback(async (signal?: AbortSignal) => {
+    const [usersResult, equipmentResult, rentalsResult] = await Promise.all([
+      getAllUsers(),
+      getAllEquipment(),
+      getAllRentals(),
+    ]);
 
-      const [users, equipment, rentals] = await Promise.all([
-        getAllUsers(),
-        getAllEquipment(),
-        getAllRentals(),
-      ]);
+    if (signal?.aborted) return;
 
-      setStats({
-        users: users.count,
-        equipment: equipment.count,
-        pending: equipment.equipment.filter((item) => item.status === "pending")
-          .length,
-        rentals: rentals.count,
-      });
-    } catch (err) {
-      setError(err instanceof Error ? err.message : "Unable to load dashboard");
-    } finally {
-      setLoading(false);
-    }
-  };
+    const usersData = usersResult as UsersResponse;
+    const equipmentData = equipmentResult as EquipmentResponse;
+    const rentalsData = rentalsResult as RentalsResponse;
 
-  //   useEffect(() => {
-  //     void loadStats();
-  //   }, []);
+    const equipmentList = getEquipmentList(equipmentData);
+
+    const pendingCount = equipmentList.filter(
+      (item) => item?.status === "pending"
+    ).length;
+
+    setStats({
+      users: getSafeCount(usersData.count, usersData.users),
+      equipment: getSafeCount(equipmentData.count, equipmentList),
+      pending: pendingCount,
+      rentals: getSafeCount(rentalsData.count, rentalsData.rentals),
+    });
+
+    setError("");
+  }, []);
+
   useEffect(() => {
-    const loadingStats = async () => {
-      void loadStats();
+    const controller = new AbortController();
+    let active = true;
+
+    const fetchStats = async () => {
+      try {
+        await loadStats(controller.signal);
+      } catch (err) {
+        if (!active || controller.signal.aborted) return;
+
+        console.error("Admin dashboard error:", err);
+
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unable to load dashboard statistics."
+        );
+      } finally {
+        if (active && !controller.signal.aborted) {
+          setLoading(false);
+        }
+      }
     };
 
-    void loadingStats();
-  }, []);
+    void fetchStats();
+
+    return () => {
+      active = false;
+      controller.abort();
+    };
+  }, [loadStats, retryCount]);
+
+  const handleRetry = () => {
+    setLoading(true);
+    setError("");
+    setRetryCount((previous) => previous + 1);
+  };
 
   const cards = [
     {
@@ -103,8 +188,9 @@ export default function AdminOverviewPage() {
       {error && (
         <div className="mb-6 rounded-xl border border-red-200 bg-white p-5">
           <p className="text-sm font-semibold text-red-600">{error}</p>
+
           <button
-            onClick={() => void loadStats()}
+            onClick={handleRetry}
             className="mt-3 text-sm font-bold underline"
           >
             Retry loading
@@ -138,10 +224,11 @@ export default function AdminOverviewPage() {
                   </div>
 
                   <p className="mt-7 text-3xl font-black tabular-nums">
-                    {card.value.toLocaleString()}
+                    {Number(card.value ?? 0).toLocaleString("en-US")}
                   </p>
 
                   <p className="mt-1 text-sm font-bold">{card.label}</p>
+
                   <p className="mt-2 text-xs text-[#14211F]/45">
                     {card.detail}
                   </p>
@@ -156,18 +243,41 @@ export default function AdminOverviewPage() {
             })}
           </div>
 
+          {/* Admin Analytics */}
+          <section className="mt-10 space-y-5">
+            <div>
+              <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#F07842]">
+                Platform Performance
+              </p>
+
+              <h2 className="mt-2 text-2xl font-black text-[#14211F]">
+                Analytics Overview
+              </h2>
+
+              <p className="mt-2 text-sm leading-6 text-[#14211F]/55">
+                Monitor platform revenue, completed rentals and monthly booking
+                performance.
+              </p>
+            </div>
+
+            <AdminAnalytics />
+          </section>
+
           <div className="mt-8 grid gap-5 lg:grid-cols-[1.2fr_0.8fr]">
             <div className="rounded-2xl bg-[#14211F] p-7 text-[#F4F1E8] sm:p-9">
               <p className="text-[10px] font-bold uppercase tracking-[0.22em] text-[#C9DB83]">
                 Administrator workspace
               </p>
+
               <h2 className="mt-4 max-w-lg text-3xl font-black leading-tight sm:text-4xl">
                 Keep the platform moving.
               </h2>
+
               <p className="mt-4 max-w-md text-sm leading-7 text-white/55">
                 Review new equipment submissions, manage user access and monitor
                 rental activity from one central workspace.
               </p>
+
               <Link
                 href="/dashboard/admin/equipment"
                 className="mt-7 inline-flex items-center gap-2 rounded-xl bg-[#C9DB83] px-5 py-3 text-sm font-bold text-[#14211F] transition hover:bg-white"
