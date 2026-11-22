@@ -5,7 +5,7 @@ import { auth } from "@/lib/auth";
 import EquipmentDetails from "@/components/equipment/EquipmentDetails";
 import { getEquipmentById } from "@/lib/api/equipment";
 
-export const instant = false;
+// export const instant = false;
 
 interface EquipmentDetailsPageProps {
   params: Promise<{
