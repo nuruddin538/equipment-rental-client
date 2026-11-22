@@ -1,3 +1,5 @@
+import { Equipment } from "./equipment";
+
 export type CustomerBookingStatus =
   | "pending"
   | "confirmed"
@@ -20,26 +22,17 @@ export interface CustomerRental {
   totalAmount: number;
   currency?: string;
 
-  paymentStatus: string;
+  paymentStatus: "pending" | "paid" | "failed" | "expired";
   status: CustomerBookingStatus;
 }
 
+// Favorite Equipment
 export interface FavoriteEquipment {
-  _id: string;
   favoriteId: string;
+  equipmentId: string;
   createdAt: string;
 
-  equipment: {
-    _id: string;
-    name: string;
-    description?: string;
-    category: string;
-    location: string;
-    price: number;
-    rentalType: "daily" | "weekly" | "monthly";
-    imageUrl?: string;
-    status: "pending" | "approved" | "rejected";
-  };
+  equipment: Equipment;
 }
 
 export interface CustomerProfile {

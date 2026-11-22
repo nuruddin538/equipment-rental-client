@@ -33,7 +33,8 @@ export interface Equipment {
   ownerImage?: string;
 
   status: EquipmentStatus;
-
+  displayPrice?: number;
+  isAvailable?: boolean;
   createdAt: string;
   updatedAt?: string;
 }
@@ -51,4 +52,36 @@ export interface EquipmentFormData {
   model: string;
   imageUrl: string;
   rentalTerms: string;
+}
+
+export interface BookingFormData {
+  equipmentId: string;
+  startDate: string;
+  endDate: string;
+  quantity: number;
+  contactNumber: string;
+  deliveryAddress: string;
+  additionalNotes?: string;
+}
+
+export interface CheckoutResponse {
+  success: boolean;
+  checkoutUrl?: string;
+  bookingId?: string;
+  totalAmount?: number;
+  currency?: string;
+  message?: string;
+}
+
+export interface EquipmentListResponse {
+  success: boolean;
+  message: string;
+  equipments: Equipment[];
+  categories: string[];
+  pagination: {
+    currentPage: number;
+    limit: number;
+    total: number;
+    totalPages: number;
+  };
 }

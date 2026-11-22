@@ -48,6 +48,20 @@ export async function getMyRentals() {
     rentals: CustomerRental[];
   }>("/api/customer/my-rentals");
 }
+
+// Favorites add
+
+export async function addFavorite(equipmentId: string) {
+  return customerRequest<{
+    success: boolean;
+    message: string;
+    favoriteId: string;
+  }>("/api/customer/favorites", {
+    method: "POST",
+    body: JSON.stringify({ equipmentId }),
+  });
+}
+
 // FAVORITES
 export async function getMyFavorites() {
   return customerRequest<{

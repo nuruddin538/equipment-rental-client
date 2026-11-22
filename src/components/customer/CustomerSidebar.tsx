@@ -78,11 +78,7 @@ export default function CustomerSidebar({
         )}
       >
         <div className="flex h-[82px] items-center justify-between border-b border-white/10 px-7">
-          <Link
-            href="/dashboard/customer"
-            onClick={onClose}
-            className="flex items-center gap-3"
-          >
+          <Link href="/" onClick={onClose} className="flex items-center gap-3">
             <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-[#F07842]">
               <ShoppingBag size={21} />
             </div>

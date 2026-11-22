@@ -6,8 +6,8 @@ import CategoriesSection from "@/components/home/CategoriesSection";
 import WhyChooseUs from "@/components/home/WhyChooseUs";
 import HowItWorks from "@/components/home/HowItWorks";
 import Testimonials from "@/components/home/Testimonials";
-import PopularEquipment from "@/components/home/PopularEquipment";
-import CTASection from "@/components/home/TrustedOwners";
+// import PopularEquipment from "@/components/home/PopularEquipment";
+// import CTASection from "@/components/home/TrustedOwners";
 import SectionReveal from "@/components/shared/SectionReveal";
 import TrustedOwners from "@/components/home/TrustedOwners";
 

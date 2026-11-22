@@ -85,29 +85,42 @@ export default function EquipmentForm({
       [key]: value,
     }));
   };
+
   const handleSubmit = async (event: React.FormEvent<HTMLFormElement>) => {
     event.preventDefault();
+
     if (!form.imageUrl) {
       toast.error("Please upload an equipment image.");
       return;
     }
+
     if (form.price <= 0 || form.availableQuantity < 1) {
       toast.error("Please enter a valid price and quantity.");
       return;
     }
+
     try {
       setSubmitting(true);
 
       if (editMode && initialData) {
         await updateEquipment(initialData._id, form);
+
         toast.success("Equipment updated successfully.");
+
+        router.push("/dashboard/owner/my-equipment");
+        router.refresh();
       } else {
         await createEquipment(form);
-        toast.success("Equipment submitted for approval.");
-      }
 
-      router.push("/dashboard/owner/my-equipment");
-      router.refresh();
+        // Clear all form fields after successful save
+        setForm({ ...initialForm });
+
+        toast.success("Equipment submitted successfully.");
+
+        // Navigate to My Equipment page
+        router.push("/dashboard/owner/my-equipment");
+        router.refresh();
+      }
     } catch (error) {
       toast.error(
         error instanceof Error ? error.message : "Something went wrong."
@@ -116,6 +129,7 @@ export default function EquipmentForm({
       setSubmitting(false);
     }
   };
+
   return (
     <form onSubmit={handleSubmit} className="space-y-7">
       <div className="grid gap-7 xl:grid-cols-[1fr_340px]">
