@@ -46,7 +46,10 @@ export default function TrustedOwners() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="relative overflow-hidden bg-[#14211F] px-5 py-24 text-[#F4F1E8] sm:px-8 lg:px-12 lg:py-32">
+    <section
+      id="about"
+      className="relative overflow-hidden bg-[#14211F] px-5 py-24 text-[#F4F1E8] sm:px-8 lg:px-12 lg:py-32"
+    >
       {/* Decorative background */}
       <div className="pointer-events-none absolute -right-36 top-10 h-[450px] w-[450px] rounded-full border border-white/[0.06]" />
       <div className="pointer-events-none absolute -right-20 top-28 h-[300px] w-[300px] rounded-full border border-white/[0.06]" />

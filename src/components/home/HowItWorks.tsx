@@ -44,7 +44,10 @@ export default function HowItWorks() {
   const shouldReduceMotion = useReducedMotion();
 
   return (
-    <section className="overflow-hidden bg-[#F4F1E8] px-5 py-24 sm:px-8 lg:px-12 lg:py-32">
+    <section
+      id="how-it-works"
+      className="overflow-hidden scroll-mt-24 bg-[#F4F1E8] px-5 py-24 sm:px-8 lg:px-12 lg:py-32"
+    >
       <div className="mx-auto max-w-[1440px]">
         {/* Heading */}
         <div className="mb-16 flex flex-col justify-between gap-7 lg:flex-row lg:items-end">

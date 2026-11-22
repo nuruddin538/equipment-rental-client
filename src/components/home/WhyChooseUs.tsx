@@ -49,7 +49,10 @@ const benefits = [
 
 export default function WhyChooseUs() {
   return (
-    <section className="relative overflow-hidden bg-[#14211F] px-5 py-24 text-[#F4F1E8] sm:px-8 lg:px-12 lg:py-32">
+    <section
+      id="contact"
+      className="relative scroll-mt-24 overflow-hidden bg-[#14211F] px-5 py-24 text-[#F4F1E8] sm:px-8 lg:px-12 lg:py-32"
+    >
       {/* Background decoration */}
       <div className="pointer-events-none absolute -right-32 -top-32 h-[420px] w-[420px] rounded-full border border-white/[0.06]" />
       <div className="pointer-events-none absolute -right-20 -top-20 h-[300px] w-[300px] rounded-full border border-white/[0.06]" />
