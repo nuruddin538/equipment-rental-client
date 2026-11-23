@@ -1,6 +1,7 @@
 "use client";
 
 import { useEffect, useState } from "react";
+
 import {
   Area,
   AreaChart,
@@ -12,6 +13,7 @@ import {
   XAxis,
   YAxis,
 } from "recharts";
+
 import {
   Users,
   Package,
@@ -26,8 +28,46 @@ import {
 } from "lucide-react";
 
 import { getAdminAnalytics } from "@/lib/api/analytics";
+
 import type { AdminAnalytics as AdminAnalyticsType } from "@/lib/types/analytics";
 
+// Safely convert API values into numbers
+const safeNumber = (value: unknown): number => {
+  if (value === null || value === undefined || value === "") {
+    return 0;
+  }
+
+  const number = Number(value);
+
+  return Number.isFinite(number) ? number : 0;
+};
+
+// USD currency formatter
+const currency = (amount: unknown): string => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 2,
+  }).format(safeNumber(amount));
+};
+
+// Compact currency formatter
+const compactCurrency = (amount: unknown): string => {
+  return new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency: "USD",
+    notation: "compact",
+    maximumFractionDigits: 1,
+  }).format(safeNumber(amount));
+};
+
+// Number formatter
+const formatNumber = (value: unknown): string => {
+  return new Intl.NumberFormat("en-US").format(safeNumber(value));
+};
+
+// Month names
 const monthNames = [
   "January",
   "February",
@@ -43,96 +83,57 @@ const monthNames = [
   "December",
 ];
 
-const safeNumber = (value: unknown): number => {
-  const number = Number(value);
-  return Number.isFinite(number) ? number : 0;
-};
-
-const formatNumber = (value: unknown) =>
-  new Intl.NumberFormat("en-US").format(safeNumber(value));
-
-const currency = (value: unknown) =>
-  new Intl.NumberFormat("en-US", {
-    style: "currency",
-    currency: "USD",
-    minimumFractionDigits: 2,
-    maximumFractionDigits: 2,
-  }).format(safeNumber(value));
-
-type MonthlyBookingStat = {
-  key: string;
-  month: string;
-  year: number;
-  bookings: number;
-};
-
-type AnalyticsResponse = AdminAnalyticsType & {
-  monthlyBookings?: {
-    year: number;
-    month: number;
-    totalBookings: number;
-  }[];
-};
-
 export default function AdminAnalytics() {
   const [analytics, setAnalytics] = useState<AdminAnalyticsType | null>(null);
+
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState("");
 
+  // Fetch Analytics
   useEffect(() => {
     let active = true;
 
-    const loadAnalytics = async () => {
+    async function loadAnalytics() {
       try {
         const data = await getAdminAnalytics();
+
+        if (!active) return;
 
         if (!data?.success || !data.analytics) {
           throw new Error("Invalid analytics response from server.");
         }
 
-        const response = data.analytics as AnalyticsResponse;
-
-        // Support both monthlyBookingStats and monthlyBookings
-        let monthlyStats: MonthlyBookingStat[] = [];
-
-        if (Array.isArray(response.monthlyBookingStats)) {
-          monthlyStats = response.monthlyBookingStats.map((item) => ({
-            key: String(item?.key ?? ""),
-            month: String(item?.month ?? ""),
-            year: safeNumber(item?.year),
-            bookings: safeNumber(item?.bookings),
-          }));
-        } else if (Array.isArray(response.monthlyBookings)) {
-          monthlyStats = response.monthlyBookings.map((item) => {
-            const monthNumber = safeNumber(item.month);
-
-            return {
-              key: `${item.year}-${String(monthNumber).padStart(2, "0")}`,
-              month: monthNames[monthNumber - 1] ?? "Unknown",
-              year: safeNumber(item.year),
-              bookings: safeNumber(item.totalBookings),
-            };
-          });
-        }
+        const response = data.analytics;
 
         const normalizedData: AdminAnalyticsType = {
           totalUsers: safeNumber(response.totalUsers),
+
           totalEquipment: safeNumber(response.totalEquipment),
+
           totalBookings: safeNumber(response.totalBookings),
+
           pendingApprovals: safeNumber(response.pendingApprovals),
+
           completedRentals: safeNumber(response.completedRentals),
+
           totalRevenue: safeNumber(response.totalRevenue),
-          monthlyBookingStats: monthlyStats,
+
+          monthlyBookingStats: Array.isArray(response.monthlyBookingStats)
+            ? response.monthlyBookingStats.map((item) => ({
+                key: String(item?.key ?? ""),
+                month: String(item?.month ?? ""),
+                year: safeNumber(item?.year),
+                bookings: safeNumber(item?.bookings),
+              }))
+            : [],
         };
 
-        if (active) {
-          setAnalytics(normalizedData);
-          setError("");
-        }
+        setAnalytics(normalizedData);
+        setError("");
       } catch (err) {
-        console.error("Admin analytics error:", err);
-
         if (active) {
+          console.error("Admin analytics error:", err);
+
           setError(
             err instanceof Error ? err.message : "Failed to load analytics."
           );
@@ -142,7 +143,7 @@ export default function AdminAnalytics() {
           setLoading(false);
         }
       }
-    };
+    }
 
     loadAnalytics();
 
@@ -151,6 +152,7 @@ export default function AdminAnalytics() {
     };
   }, []);
 
+  // Loading State
   if (loading) {
     return (
       <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 xl:grid-cols-3">
@@ -164,6 +166,7 @@ export default function AdminAnalytics() {
     );
   }
 
+  // Error State
   if (error || !analytics) {
     return (
       <div className="rounded-2xl border border-red-200 bg-red-50 p-6">
@@ -174,26 +177,31 @@ export default function AdminAnalytics() {
     );
   }
 
-  const chartData = [...analytics.monthlyBookingStats]
-    .sort(
-      (a, b) =>
-        a.year - b.year ||
-        monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
-    )
-    .map((item) => ({
-      ...item,
-      bookings: safeNumber(item.bookings),
-      monthLabel: `${item.month} ${item.year}`,
-    }));
+  // Monthly Booking Statistics
+  const monthlyStats = Array.isArray(analytics.monthlyBookingStats)
+    ? [...analytics.monthlyBookingStats].sort(
+        (a, b) =>
+          a.year - b.year ||
+          monthNames.indexOf(a.month) - monthNames.indexOf(b.month)
+      )
+    : [];
+
+  const chartData = monthlyStats.map((item) => ({
+    ...item,
+    bookings: safeNumber(item.bookings),
+    monthLabel: `${item.month} ${item.year}`,
+  }));
 
   const totalBookings = safeNumber(analytics.totalBookings);
+
   const completedRentals = safeNumber(analytics.completedRentals);
 
   const completionRate =
     totalBookings > 0 ? (completedRentals / totalBookings) * 100 : 0;
 
-  const averageBookings =
-    chartData.length > 0 ? totalBookings / chartData.length : 0;
+  const totalMonths = chartData.length;
+
+  const averageBookings = totalMonths > 0 ? totalBookings / totalMonths : 0;
 
   const bestMonth =
     chartData.length > 0
@@ -202,6 +210,7 @@ export default function AdminAnalytics() {
         )
       : null;
 
+  // Statistics Cards
   const stats = [
     {
       title: "Total Users",
@@ -295,18 +304,21 @@ export default function AdminAnalytics() {
       {/* Monthly Booking Area Chart */}
       <div className="overflow-hidden rounded-2xl border border-gray-100 bg-white p-5 shadow-sm sm:p-6">
         <div className="mb-7 flex flex-col justify-between gap-4 sm:flex-row sm:items-center">
-          <div className="flex items-center gap-2">
-            <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
-              <ChartNoAxesCombined size={21} className="text-[#F07842]" />
-            </div>
+          <div>
+            <div className="flex items-center gap-2">
+              <div className="flex h-10 w-10 items-center justify-center rounded-xl bg-orange-50">
+                <ChartNoAxesCombined size={21} className="text-[#F07842]" />
+              </div>
 
-            <div>
-              <h2 className="text-lg font-black text-[#14211F]">
-                Booking Overview
-              </h2>
-              <p className="text-xs text-gray-400">
-                Monthly platform booking performance
-              </p>
+              <div>
+                <h2 className="text-lg font-black text-[#14211F]">
+                  Booking Overview
+                </h2>
+
+                <p className="text-xs text-gray-400">
+                  Monthly platform booking performance
+                </p>
+              </div>
             </div>
           </div>
 
@@ -314,6 +326,7 @@ export default function AdminAnalytics() {
             <p className="text-xs font-medium text-orange-700">
               Total Bookings
             </p>
+
             <p className="mt-1 text-xl font-black text-orange-700">
               {formatNumber(totalBookings)}
             </p>
@@ -331,7 +344,12 @@ export default function AdminAnalytics() {
             <ResponsiveContainer width="100%" height="100%">
               <AreaChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: 5, bottom: 5 }}
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: 5,
+                  bottom: 5,
+                }}
               >
                 <defs>
                   <linearGradient
@@ -342,6 +360,7 @@ export default function AdminAnalytics() {
                     y2="1"
                   >
                     <stop offset="5%" stopColor="#F07842" stopOpacity={0.3} />
+
                     <stop offset="95%" stopColor="#F07842" stopOpacity={0.02} />
                   </linearGradient>
                 </defs>
@@ -409,6 +428,7 @@ export default function AdminAnalytics() {
           <h2 className="text-lg font-black text-[#14211F]">
             Monthly Booking Statistics
           </h2>
+
           <p className="mt-1 text-xs text-gray-400">
             Compare platform bookings month by month
           </p>
@@ -425,7 +445,12 @@ export default function AdminAnalytics() {
             <ResponsiveContainer width="100%" height="100%">
               <BarChart
                 data={chartData}
-                margin={{ top: 10, right: 10, left: 5, bottom: 5 }}
+                margin={{
+                  top: 10,
+                  right: 10,
+                  left: 5,
+                  bottom: 5,
+                }}
               >
                 <CartesianGrid
                   strokeDasharray="4 4"
@@ -480,6 +505,7 @@ export default function AdminAnalytics() {
           <div>
             <div className="flex items-center gap-2 text-[#F6A77F]">
               <ShieldCheck size={19} />
+
               <p className="text-xs font-bold uppercase tracking-[0.18em]">
                 Platform Performance
               </p>
@@ -498,6 +524,7 @@ export default function AdminAnalytics() {
           <div className="grid grid-cols-1 gap-3 sm:grid-cols-2">
             <div className="rounded-xl bg-white/10 px-5 py-4">
               <p className="text-xs text-white/60">Rental Completion Rate</p>
+
               <p className="mt-2 text-2xl font-black">
                 {completionRate.toFixed(1)}%
               </p>
@@ -505,6 +532,7 @@ export default function AdminAnalytics() {
 
             <div className="rounded-xl bg-white/10 px-5 py-4">
               <p className="text-xs text-white/60">Average Monthly Bookings</p>
+
               <p className="mt-2 text-2xl font-black">
                 {formatNumber(Math.round(averageBookings))}
               </p>
@@ -517,6 +545,7 @@ export default function AdminAnalytics() {
             <div>
               <div className="flex items-center gap-2 text-[#F6A77F]">
                 <TrendingUp size={17} />
+
                 <p className="text-xs font-bold uppercase tracking-wider">
                   Best Performing Month
                 </p>
