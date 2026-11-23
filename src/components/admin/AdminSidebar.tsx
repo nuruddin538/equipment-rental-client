@@ -58,7 +58,7 @@ export default function AdminSidebar({
   const handleLogout = async () => {
     try {
       await authClient.signOut();
-      router.replace("/signin");
+      router.replace("/login");
       router.refresh();
     } catch (error) {
       console.error("Logout failed:", error);
