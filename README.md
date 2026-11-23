@@ -14,6 +14,10 @@ The platform includes dedicated dashboards for customers, equipment owners, and 
 🔗[Frontend Github Repository](https://github.com/nuruddin538/equipment-rental-client)
 🔗[Backend Github Repository](https://github.com/nuruddin538/equipment-rental-server)
 
+<!-- Add your project screenshot here -->
+
+## ![DevStack Preview](https://i.ibb.co.com/21N55kj7/equipment-rental.png)
+
 ## 📌 Project Overview
 
 Equipora is designed to simplify the equipment rental process by connecting equipment owners with customers who need equipment for a specific period.
